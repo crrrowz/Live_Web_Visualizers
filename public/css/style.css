@@ -327,12 +327,16 @@ canvas {
 /* ===========================
    SCENE TOGGLE BUTTON
    =========================== */
-#scene-toggle {
+#scene-nav {
     position: absolute;
     top: 20px;
     right: 20px;
     z-index: 25;
     display: none;
+}
+
+#scene-toggle {
+    display: flex;
     align-items: center;
     gap: 6px;
     background: rgba(0,0,0,0.5);
@@ -354,4 +358,266 @@ canvas {
     color: #fff;
     box-shadow: 0 0 20px rgba(139,92,246,0.3);
     transform: scale(1.05);
+}
+
+/* kbd elements in controls hint */
+kbd {
+    font-family: 'Inter', sans-serif;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+/* ===========================
+   RESPONSIVE — TABLET (≤768px)
+   =========================== */
+@media (max-width: 768px) {
+    #tap-prompt h1 {
+        font-size: 1.8rem;
+        letter-spacing: 2px;
+    }
+
+    #tap-prompt p {
+        font-size: 0.85rem;
+    }
+
+    /* Timer */
+    #timer {
+        font-size: 2.2rem;
+        letter-spacing: 2px;
+    }
+
+    #timer-label {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+    }
+
+    /* Level box — move to bottom-center, full width */
+    #level-box {
+        left: 16px;
+        right: 16px;
+        bottom: auto;
+        top: 80px;
+        min-width: unset;
+        padding: 12px 16px;
+        border-radius: 12px;
+    }
+
+    #level-num {
+        font-size: 1.5rem;
+    }
+
+    /* Stats row — reflow under level box */
+    #stats-row {
+        position: absolute;
+        bottom: auto;
+        top: 170px;
+        right: 16px;
+        left: 16px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .stat-item {
+        min-width: unset;
+        padding: 10px 8px;
+        border-radius: 10px;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+    }
+
+    .stat-label {
+        font-size: 0.6rem;
+    }
+
+    /* Quote box */
+    #quote-box {
+        bottom: 70px;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    #quote-text {
+        font-size: 1.3rem;
+        line-height: 1.8;
+    }
+
+    /* Scene toggle */
+    #scene-nav {
+        top: 14px;
+        right: 14px;
+    }
+
+    #scene-toggle {
+        padding: 8px 14px;
+        font-size: 0.7rem;
+    }
+
+    /* Volume bar */
+    #volume-bar {
+        bottom: 45px;
+    }
+
+    /* Controls hint */
+    #controls-hint {
+        gap: 10px;
+        font-size: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 90%;
+    }
+}
+
+/* ===========================
+   RESPONSIVE — PHONE (≤480px)
+   =========================== */
+@media (max-width: 480px) {
+    #tap-prompt h1 {
+        font-size: 1.4rem;
+        letter-spacing: 1px;
+    }
+
+    #tap-prompt p {
+        font-size: 0.75rem;
+    }
+
+    /* Top bar */
+    #top-bar {
+        top: 10px;
+        left: 12px;
+        gap: 6px;
+    }
+
+    #rec-indicator {
+        padding: 4px 10px;
+        border-radius: 30px;
+    }
+
+    #rec-indicator .dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    #rec-indicator span {
+        font-size: 0.55rem;
+        letter-spacing: 1px;
+    }
+
+    #shape-name {
+        font-size: 0.45rem;
+    }
+
+    /* Timer — shrink significantly */
+    #timer-box {
+        top: 12px;
+    }
+
+    #timer {
+        font-size: 1.6rem;
+        letter-spacing: 1px;
+    }
+
+    #timer-label {
+        font-size: 0.6rem;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+    }
+
+    /* Level box — compact horizontal card */
+    #level-box {
+        top: 58px;
+        left: 12px;
+        right: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    #level-label {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+
+    #level-num {
+        font-size: 1.2rem;
+    }
+
+    #xp-bar-bg {
+        flex: 1;
+        min-width: 80px;
+        height: 6px;
+        margin-bottom: 0;
+    }
+
+    #xp-text {
+        font-size: 0.6rem;
+        width: 100%;
+    }
+
+    /* Stats row — 2x2 grid, positioned below level */
+    #stats-row {
+        top: 130px;
+        left: 12px;
+        right: 12px;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .stat-item {
+        padding: 8px 6px;
+        border-radius: 8px;
+    }
+
+    .stat-value {
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+    }
+
+    .stat-label {
+        font-size: 0.55rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Quote box */
+    #quote-box {
+        bottom: 55px;
+        width: 92%;
+    }
+
+    #quote-text {
+        font-size: 1rem;
+        line-height: 1.7;
+        letter-spacing: 0;
+    }
+
+    /* Scene toggle */
+    #scene-nav {
+        top: 10px;
+        right: 10px;
+    }
+
+    #scene-toggle {
+        padding: 6px 12px;
+        font-size: 0.65rem;
+        border-radius: 24px;
+    }
+
+    /* Volume bar */
+    #volume-bar {
+        bottom: 36px;
+        height: 18px;
+    }
+
+    /* Controls hint — hide on very small screens, touch replaces keyboard */
+    #controls-hint {
+        display: none !important;
+    }
 }

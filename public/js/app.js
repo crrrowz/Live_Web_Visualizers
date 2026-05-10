@@ -130,7 +130,7 @@ function init() {
         document.getElementById('quote-box').style.display = 'block';
         volBar.style.display = 'flex';
         document.getElementById('controls-hint').style.display = 'flex';
-        document.getElementById('scene-toggle').style.display = 'flex';
+        document.getElementById('scene-nav').style.display = 'block';
 
         startTimer();
         startQuotes();

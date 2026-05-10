@@ -1,15 +1,23 @@
 {
-  "totalSessions": 1,
-  "totalMinutes": 793,
+  "totalSessions": 3,
+  "totalMinutes": 850.5,
   "currentStreak": 1,
   "lastStudyDate": "2026-05-10",
   "longestSessionMin": 793,
   "level": 1,
-  "xp": 7930,
+  "xp": 8505,
   "sessions": [
     {
       "date": "2026-05-10T13:38:33.623Z",
       "durationMin": 793
+    },
+    {
+      "date": "2026-05-10T14:23:27.600Z",
+      "durationMin": 44.9
+    },
+    {
+      "date": "2026-05-10T14:36:06.826Z",
+      "durationMin": 12.6
     }
   ]
 }
