@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Primary Meta Tags -->
+    <title>Voice Study Visualizer — محفّز الدراسة الصوتي</title>
+    <meta name="title" content="Voice Study Visualizer — محفّز الدراسة الصوتي">
+    <meta name="description" content="تطبيق تحفيز دراسي بصري تفاعلي. يحوّل صوتك إلى مشاهد ثلاثية الأبعاد مذهلة مع نظام تتبع إنجازات، مستويات، وسلسلة دراسة يومية.">
+    <meta name="keywords" content="study, visualizer, voice, 3d, webgl, threejs, arabic, دراسة, محفز, تفاعلي, صوتي, ثلاثي الأبعاد">
+    <meta name="author" content="Voice Study Visualizer">
+    <meta name="theme-color" content="#07070d">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://voice-study-visualizer.vercel.app/">
+    <meta property="og:title" content="Voice Study Visualizer — محفّز الدراسة الصوتي">
+    <meta property="og:description" content="تطبيق تحفيز دراسي بصري تفاعلي. يحوّل صوتك إلى مشاهد ثلاثية الأبعاد مذهلة مع نظام تتبع إنجازات.">
+    <meta property="og:image" content="/favicon.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://voice-study-visualizer.vercel.app/">
+    <meta property="twitter:title" content="Voice Study Visualizer — محفّز الدراسة الصوتي">
+    <meta property="twitter:description" content="تطبيق تحفيز دراسي بصري تفاعلي. يحوّل صوتك إلى مشاهد ثلاثية الأبعاد مذهلة مع نظام تتبع إنجازات.">
+    <meta property="twitter:image" content="/favicon.png">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+
+    <!-- Fonts & CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=Tajawal:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <!-- Three.js renders here -->
+    <canvas id="waveCanvas"></canvas>
+
+    <!-- Tap to start prompt -->
+    <div id="tap-prompt">
+        <h1>ابدأ جلسة الدراسة</h1>
+        <p>اضغط في أي مكان لبدء التصوّر الصوتي</p>
+    </div>
+
+    <!-- Top bar: rec indicator + shape name -->
+    <div id="top-bar">
+        <div id="rec-indicator">
+            <div class="dot"></div>
+            <span>يستمع</span>
+        </div>
+        <div id="shape-name"></div>
+    </div>
+
+    <!-- Study HUD (heads-up display) -->
+    <div id="study-hud">
+        <!-- Timer -->
+        <div id="timer-box">
+            <div id="timer-label">مدة الجلسة</div>
+            <div id="timer">00:00:00</div>
+        </div>
+
+        <!-- Level & XP -->
+        <div id="level-box">
+            <div id="level-label">المستوى <span id="level-num">1</span></div>
+            <div id="xp-bar-bg"><div id="xp-bar-fill"></div></div>
+            <div id="xp-text">0 / 100 XP</div>
+        </div>
+
+        <!-- Stats row -->
+        <div id="stats-row">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-sessions">0</div>
+                <div class="stat-label">جلسات</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-total-time">0h</div>
+                <div class="stat-label">إجمالي</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-streak">0🔥</div>
+                <div class="stat-label">سلسلة</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-longest">0m</div>
+                <div class="stat-label">أطول جلسة</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Motivational quote -->
+    <div id="quote-box">
+        <div id="quote-text"></div>
+    </div>
+
+    <!-- Scene toggle button -->
+    <button id="scene-toggle">🔄 Solar System</button>
+
+    <!-- Volume bar -->
+    <div id="volume-bar"></div>
+
+    <!-- Controls hint -->
+    <div id="controls-hint">
+        <span>Space نقرة = عكس الألوان</span>
+        <span>Space مطوّل = الإحصائيات</span>
+        <span>S = حفظ الجلسة</span>
+        <span>R = إعادة تعيين</span>
+        <span>T = تغيير المشهد</span>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>

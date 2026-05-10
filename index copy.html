@@ -1,0 +1,572 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Visualizer — Live Audio Waves</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0f;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Three.js canvas */
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* 2D Waveform overlay */
+        #waveCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Tap prompt */
+        #tap-prompt {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+        #tap-prompt h1 {
+            font-size: 1.6rem;
+            font-weight: 300;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #00f0ff, #8b5cf6, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.8rem;
+            animation: breathe 2.5s ease-in-out infinite;
+        }
+        #tap-prompt p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 2px;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Shape name indicator */
+        #shape-name {
+            position: absolute;
+            top: 80px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+            display: none;
+        }
+
+        /* Recording indicator */
+        #rec-indicator {
+            position: absolute;
+            top: 30px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 24px;
+            border-radius: 40px;
+            backdrop-filter: blur(15px);
+        }
+        #rec-indicator .dot {
+            width: 10px; height: 10px;
+            background: #ff3b5c;
+            border-radius: 50%;
+            animation: pulse-dot 1.2s ease-in-out infinite;
+            box-shadow: 0 0 8px #ff3b5c;
+        }
+        #rec-indicator span {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.7); }
+        }
+
+        /* Volume meter */
+        #volume-bar {
+            position: absolute;
+            bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: none;
+            align-items: center;
+            gap: 3px;
+            height: 30px;
+        }
+        .vol-segment {
+            width: 4px;
+            background: linear-gradient(to top, #8b5cf6, #00f0ff);
+            border-radius: 2px;
+            transition: height 0.05s ease;
+            min-height: 3px;
+        }
+
+        /* Color inversion mode */
+        body.inverted {
+            filter: invert(1);
+        }
+        body {
+            transition: filter 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="waveCanvas"></canvas>
+
+    <div id="tap-prompt">
+        <h1>Tap Anywhere</h1>
+        <p>to start voice visualization</p>
+    </div>
+
+    <div id="shape-name"></div>
+
+    <div id="rec-indicator">
+        <div class="dot"></div>
+        <span>Listening</span>
+    </div>
+
+    <div id="volume-bar"></div>
+
+    <script type="module">
+        import * as THREE from 'https://esm.sh/three@0.136.0';
+        import { EffectComposer } from 'https://esm.sh/three@0.136.0/examples/jsm/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'https://esm.sh/three@0.136.0/examples/jsm/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'https://esm.sh/three@0.136.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+        // --- AUDIO ---
+        let audioContext, analyser, dataArray, waveformArray;
+        let isAudioActive = false;
+        let bass = 0, smoothBass = 0;
+
+        // --- 2D WAVE CANVAS ---
+        const waveCanvas = document.getElementById('waveCanvas');
+        const wCtx = waveCanvas.getContext('2d');
+
+        // --- VOLUME BAR ---
+        const volBar = document.getElementById('volume-bar');
+        const VOL_SEGMENTS = 40;
+        for (let i = 0; i < VOL_SEGMENTS; i++) {
+            const s = document.createElement('div');
+            s.className = 'vol-segment';
+            volBar.appendChild(s);
+        }
+
+        // --- SHADERS ---
+        const vertexShader = `
+uniform float uTime;
+uniform float uBass;
+uniform float uType;
+varying vec2 vUv;
+varying float vDisp;
+
+vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C=vec2(1.0/6.0,1.0/3.0);
+  const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy));
+  vec3 x0=v-i+dot(i,C.xxx);
+  vec3 g=step(x0.yzx,x0.xyz);
+  vec3 l=1.0-g;
+  vec3 i1=min(g.xyz,l.zxy);
+  vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx;
+  vec3 x2=x0-i2+C.yyy;
+  vec3 x3=x0-D.yyy;
+  i=mod289(i);
+  vec4 p=permute(permute(permute(
+    i.z+vec4(0.0,i1.z,i2.z,1.0))
+    +i.y+vec4(0.0,i1.y,i2.y,1.0))
+    +i.x+vec4(0.0,i1.x,i2.x,1.0));
+  float n_=0.142857142857;
+  vec3 ns=n_*D.wyz-D.xzx;
+  vec4 j=p-49.0*floor(p*ns.z*ns.z);
+  vec4 x_=floor(j*ns.z);
+  vec4 y_=floor(j-7.0*x_);
+  vec4 x=x_*ns.x+ns.yyyy;
+  vec4 y=y_*ns.x+ns.yyyy;
+  vec4 h=1.0-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy);
+  vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0;
+  vec4 s1=floor(b1)*2.0+1.0;
+  vec4 sh=-step(h,vec4(0.0));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;
+  vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x);
+  vec3 p1=vec3(a0.zw,h.y);
+  vec3 p2=vec3(a1.xy,h.z);
+  vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);
+  m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}
+
+void main(){
+  vUv=uv;
+  float nf=2.0+uBass*2.0;
+  float na=0.3+uBass*0.8;
+  vec3 p=position;
+  float ag=(uType>0.5)?2.0:1.0;
+  float n=snoise(p*nf+uTime*ag);
+  p+=normal*n*na;
+  vDisp=n;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);
+}`;
+
+        const fragmentShader = `
+uniform float uBass;
+uniform float uType;
+varying float vDisp;
+void main(){
+  vec3 color;
+  float intensity=smoothstep(-0.2,0.5,vDisp)+uBass;
+  if(uType<0.5){
+    color=mix(vec3(0.05,0.0,0.3),vec3(0.0,0.9,1.0),intensity);
+  } else {
+    color=mix(vec3(0.3,0.0,0.2),vec3(1.0,0.0,0.45),intensity);
+  }
+  color+=vec3(intensity*uBass*0.3);
+  gl_FragColor=vec4(color,1.0);
+}`;
+
+        // --- RANDOM GEOMETRY PICKER ---
+        const SHAPES = [
+            { name: 'Icosahedron', make: () => new THREE.IcosahedronGeometry(2, 20) },
+            { name: 'Torus Knot', make: () => new THREE.TorusKnotGeometry(1.5, 0.5, 128, 32) },
+            { name: 'Octahedron', make: () => new THREE.OctahedronGeometry(2.2, 6) },
+            { name: 'Dodecahedron', make: () => new THREE.DodecahedronGeometry(2, 8) },
+            { name: 'Torus', make: () => new THREE.TorusGeometry(1.6, 0.7, 32, 64) },
+            { name: 'Sphere', make: () => new THREE.SphereGeometry(2, 64, 64) },
+        ];
+
+        function pickRandomShape() {
+            return SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        }
+
+        // --- THREE.JS SETUP ---
+        let scene, camera, renderer, composer;
+        let matter, antimatter, particles;
+        let audioStarted = false;
+
+        init();
+        animate();
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+            camera.position.z = 12;
+
+            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(innerWidth, innerHeight), 1.5, 0.4, 0.85
+            );
+            bloomPass.threshold = 0.1;
+            bloomPass.strength = 2.2;
+            bloomPass.radius = 0.6;
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            composer.addPass(bloomPass);
+
+            // Pick random shapes for each object
+            const shape1 = pickRandomShape();
+            const shape2 = pickRandomShape();
+            const geo1 = shape1.make();
+            const geo2 = shape2.make();
+
+            // Show shape names
+            const shapeLabel = document.getElementById('shape-name');
+            shapeLabel.textContent = shape1.name + '  ×  ' + shape2.name;
+
+            const matM = new THREE.ShaderMaterial({
+                vertexShader, fragmentShader,
+                uniforms: { uTime: { value: 0 }, uBass: { value: 0 }, uType: { value: 0.0 } }
+            });
+            matter = new THREE.Mesh(geo1, matM);
+            matter.position.x = -4;
+            scene.add(matter);
+
+            const matA = new THREE.ShaderMaterial({
+                vertexShader, fragmentShader,
+                uniforms: { uTime: { value: 0 }, uBass: { value: 0 }, uType: { value: 1.0 } },
+                wireframe: true
+            });
+            antimatter = new THREE.Mesh(geo2, matA);
+            antimatter.position.x = 4;
+            scene.add(antimatter);
+
+            // Particles
+            const pGeo = new THREE.BufferGeometry();
+            const pCount = 2000;
+            const pPos = new Float32Array(pCount * 3);
+            for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 20;
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            const pMat = new THREE.PointsMaterial({
+                color: 0xffffff, size: 0.05,
+                transparent: true, opacity: 0.0,
+                blending: THREE.AdditiveBlending
+            });
+            particles = new THREE.Points(pGeo, pMat);
+            scene.add(particles);
+
+            // Auto-start: tap/click anywhere to init audio
+            function onFirstInteraction() {
+                if (audioStarted) return;
+                audioStarted = true;
+                initAudio();
+                const prompt = document.getElementById('tap-prompt');
+                if (prompt) {
+                    prompt.style.opacity = 0;
+                    setTimeout(() => prompt.remove(), 1000);
+                }
+                document.getElementById('rec-indicator').style.display = 'flex';
+                document.getElementById('shape-name').style.display = 'block';
+                volBar.style.display = 'flex';
+                document.removeEventListener('click', onFirstInteraction);
+                document.removeEventListener('touchstart', onFirstInteraction);
+            }
+            document.addEventListener('click', onFirstInteraction);
+            document.addEventListener('touchstart', onFirstInteraction);
+
+            window.addEventListener('resize', onResize);
+            onResize();
+
+            // Spacebar to toggle color inversion
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    document.body.classList.toggle('inverted');
+                }
+            });
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+            waveCanvas.width = innerWidth;
+            waveCanvas.height = innerHeight;
+        }
+
+        async function initAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+
+                // Amplify microphone input 3x for better sensitivity
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 3.0;
+                source.connect(gainNode);
+
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.65;
+                analyser.minDecibels = -90;
+                analyser.maxDecibels = -10;
+                gainNode.connect(analyser);
+
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                waveformArray = new Uint8Array(analyser.fftSize);
+                isAudioActive = true;
+            } catch (e) {
+                alert("Microphone permission required!");
+            }
+        }
+
+        // --- DRAW 2D WAVEFORM ---
+        function drawWaveform() {
+            if (!isAudioActive) return;
+            analyser.getByteTimeDomainData(waveformArray);
+
+            const W = waveCanvas.width;
+            const H = waveCanvas.height;
+            wCtx.clearRect(0, 0, W, H);
+
+            const cx = W / 2;
+            const cy = H / 2;
+            const baseRadius = Math.min(W, H) * 0.22;
+            const sliceCount = waveformArray.length;
+
+            // Circular waveform
+            for (let ring = 0; ring < 3; ring++) {
+                const alpha = [0.6, 0.3, 0.15][ring];
+                const rOffset = ring * 15;
+                const colors = [
+                    `rgba(139, 92, 246, ${alpha})`,
+                    `rgba(0, 240, 255, ${alpha})`,
+                    `rgba(255, 0, 110, ${alpha})`
+                ];
+
+                wCtx.beginPath();
+                wCtx.strokeStyle = colors[ring];
+                wCtx.lineWidth = 2 - ring * 0.5;
+                wCtx.shadowColor = colors[ring];
+                wCtx.shadowBlur = 15;
+
+                for (let i = 0; i <= sliceCount; i++) {
+                    const v = (waveformArray[i % sliceCount] - 128) / 128.0;
+                    const angle = (i / sliceCount) * Math.PI * 2 - Math.PI / 2;
+                    const r = baseRadius + rOffset + v * (40 + smoothBass * 80);
+                    const x = cx + Math.cos(angle) * r;
+                    const y = cy + Math.sin(angle) * r;
+                    if (i === 0) wCtx.moveTo(x, y);
+                    else wCtx.lineTo(x, y);
+                }
+                wCtx.stroke();
+                wCtx.shadowBlur = 0;
+            }
+
+            // Horizontal wave at bottom third
+            const waveY = H * 0.75;
+            wCtx.beginPath();
+            const grad = wCtx.createLinearGradient(0, waveY - 30, W, waveY + 30);
+            grad.addColorStop(0, 'rgba(139, 92, 246, 0.5)');
+            grad.addColorStop(0.5, 'rgba(0, 240, 255, 0.5)');
+            grad.addColorStop(1, 'rgba(255, 0, 110, 0.5)');
+            wCtx.strokeStyle = grad;
+            wCtx.lineWidth = 2;
+            wCtx.shadowColor = '#8b5cf6';
+            wCtx.shadowBlur = 10;
+
+            const step = W / sliceCount;
+            for (let i = 0; i < sliceCount; i++) {
+                const v = (waveformArray[i] - 128) / 128.0;
+                const x = i * step;
+                const y = waveY + v * (30 + smoothBass * 60);
+                if (i === 0) wCtx.moveTo(x, y);
+                else wCtx.lineTo(x, y);
+            }
+            wCtx.stroke();
+            wCtx.shadowBlur = 0;
+
+            // Frequency bars around center
+            analyser.getByteFrequencyData(dataArray);
+            const barCount = 64;
+            const barWidth = 3;
+            for (let i = 0; i < barCount; i++) {
+                const val = dataArray[i] / 255;
+                const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
+                const innerR = baseRadius - 20;
+                const barLen = val * (50 + smoothBass * 40);
+                const x1 = cx + Math.cos(angle) * innerR;
+                const y1 = cy + Math.sin(angle) * innerR;
+                const x2 = cx + Math.cos(angle) * (innerR - barLen);
+                const y2 = cy + Math.sin(angle) * (innerR - barLen);
+
+                const hue = 260 + (i / barCount) * 120;
+                wCtx.beginPath();
+                wCtx.strokeStyle = `hsla(${hue}, 90%, 65%, ${0.4 + val * 0.6})`;
+                wCtx.lineWidth = barWidth;
+                wCtx.moveTo(x1, y1);
+                wCtx.lineTo(x2, y2);
+                wCtx.stroke();
+            }
+        }
+
+        // --- UPDATE VOLUME BAR ---
+        function updateVolumeBar() {
+            if (!isAudioActive) return;
+            const segments = volBar.children;
+            for (let i = 0; i < VOL_SEGMENTS; i++) {
+                const idx = Math.floor((i / VOL_SEGMENTS) * dataArray.length);
+                const val = dataArray[idx] / 255;
+                segments[i].style.height = (3 + val * 25) + 'px';
+            }
+        }
+
+        // --- MAIN LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now() * 0.0004;
+            let rawBass = 0;
+
+            if (isAudioActive) {
+                analyser.getByteFrequencyData(dataArray);
+                // Use wider frequency range (20 bins) for better voice detection
+                let b = 0;
+                for (let i = 0; i < 20; i++) b += dataArray[i];
+                rawBass = Math.min(b / 20 / 255 * 2.5, 1.0); // Amplify + clamp
+                bass = Math.pow(rawBass, 1.2); // Gentle curve, reacts to soft sounds
+                smoothBass += (rawBass - smoothBass) * 0.1;
+            }
+
+            // Object attraction
+            let targetDist = 6.0 * (1.0 - rawBass * 1.2);
+            if (targetDist < 0) targetDist = 0;
+            matter.position.x += (-targetDist / 2 - matter.position.x) * 0.03;
+            antimatter.position.x = -matter.position.x;
+
+            // Uniforms
+            matter.material.uniforms.uTime.value = time;
+            matter.material.uniforms.uBass.value = bass;
+            antimatter.material.uniforms.uTime.value = time;
+            antimatter.material.uniforms.uBass.value = bass;
+
+            // Rotation (slow & smooth)
+            const rs = 0.2 + bass * 1.5;
+            matter.rotation.y += rs * 0.004;
+            matter.rotation.z += rs * 0.006;
+            antimatter.rotation.y -= rs * 0.004;
+            antimatter.rotation.z -= rs * 0.006;
+
+            // Collision — NO white screen, use colored glow instead
+            const dist = Math.abs(matter.position.x - antimatter.position.x);
+            if (dist < 1.5) {
+                const glow = rawBass * 0.12;
+                scene.background = new THREE.Color(glow * 0.3, glow * 0.1, glow * 0.5);
+                particles.material.opacity = 1.0;
+                particles.scale.setScalar(1.0 + bass);
+                particles.rotation.y += 0.02;
+                camera.position.x = (Math.random() - 0.5) * bass * 0.15;
+                camera.position.y = (Math.random() - 0.5) * bass * 0.15;
+            } else {
+                scene.background = new THREE.Color(0x0a0a0f);
+                particles.material.opacity *= 0.9;
+                camera.position.x += (0 - camera.position.x) * 0.1;
+                camera.position.y += (0 - camera.position.y) * 0.1;
+            }
+
+            // Draw 2D overlays
+            drawWaveform();
+            updateVolumeBar();
+
+            composer.render();
+        }
+    </script>
+</body>
+</html>

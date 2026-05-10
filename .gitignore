@@ -1,0 +1,30 @@
+# التبعيات
+node_modules/
+
+# ملفات النظام
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ملفات المحرر
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# سجلات
+*.log
+npm-debug.log*
+
+# ملفات البيئة
+.env
+.env.local
+.env.*.local
+
+# ملفات مؤقتة
+*.tmp
+*.temp
+
+# تاريخ PowerShell
+PowerShellHistory.txt

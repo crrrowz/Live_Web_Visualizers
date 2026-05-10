@@ -1,0 +1,357 @@
+/* ===========================
+   DESIGN SYSTEM & BASE
+   =========================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: #07070d;
+    overflow: hidden;
+    font-family: 'Tajawal', 'Inter', sans-serif;
+    color: #fff;
+    height: 100vh;
+    width: 100vw;
+    transition: filter 0.3s ease;
+}
+
+body.inverted {
+    filter: invert(1);
+}
+
+canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    z-index: 1;
+}
+
+#waveCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ===========================
+   TAP PROMPT
+   =========================== */
+#tap-prompt {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 20;
+    transition: opacity 1s ease;
+    pointer-events: none;
+}
+
+#tap-prompt h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #00f0ff, #8b5cf6, #ff006e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.8rem;
+    animation: breathe 2.5s ease-in-out infinite;
+}
+
+#tap-prompt p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 1px;
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* ===========================
+   TOP BAR (rec + shape)
+   =========================== */
+#top-bar {
+    position: absolute;
+    top: 14px; left: 20px;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    gap: 10px;
+}
+
+#rec-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 6px 16px;
+    border-radius: 40px;
+    backdrop-filter: blur(15px);
+}
+
+#rec-indicator .dot {
+    width: 8px; height: 8px;
+    background: #ff3b5c;
+    border-radius: 50%;
+    animation: pulse-dot 1.2s ease-in-out infinite;
+    box-shadow: 0 0 6px #ff3b5c;
+}
+
+#rec-indicator span {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.7); }
+}
+
+#shape-name {
+    font-size: 0.55rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.12);
+}
+
+/* ===========================
+   STUDY HUD — Spread Layout
+   =========================== */
+#study-hud {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+/* Timer — TOP CENTER */
+#timer-box {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: auto;
+}
+
+#timer-label {
+    font-size: 0.8rem;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+}
+
+#timer {
+    font-family: 'Inter', monospace;
+    font-size: 3.2rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #00f0ff, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 20px rgba(0,240,255,0.3));
+}
+
+/* Level & XP — BOTTOM LEFT */
+#level-box {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(251,191,36,0.15);
+    border-radius: 16px;
+    padding: 16px 22px;
+    backdrop-filter: blur(20px);
+    min-width: 200px;
+    pointer-events: auto;
+}
+
+#level-label {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+}
+
+#level-num {
+    font-weight: 900;
+    font-size: 2rem;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#xp-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+#xp-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #8b5cf6, #00f0ff, #8b5cf6);
+    background-size: 200% 100%;
+    animation: xpShimmer 2s ease-in-out infinite;
+    border-radius: 4px;
+    transition: width 0.8s ease;
+}
+
+@keyframes xpShimmer {
+    0% { background-position: 0% 0; }
+    100% { background-position: 200% 0; }
+}
+
+#xp-text {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Stats Row — BOTTOM RIGHT */
+#stats-row {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    pointer-events: auto;
+}
+
+.stat-item {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 14px 18px;
+    text-align: center;
+    backdrop-filter: blur(15px);
+    min-width: 90px;
+}
+
+.stat-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: rgba(255,255,255,0.95);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1px;
+}
+
+/* ===========================
+   QUOTE BOX — Center, Large
+   =========================== */
+#quote-box {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    max-width: 750px;
+    width: 80%;
+    text-align: center;
+    display: none;
+}
+
+#quote-text {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(139,92,246,1), rgba(0,240,255,1), rgba(255,0,110,0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 2;
+    letter-spacing: 1px;
+    transition: opacity 0.6s ease;
+    filter: drop-shadow(0 0 25px rgba(139,92,246,0.4));
+    animation: quoteGlow 3s ease-in-out infinite;
+}
+
+@keyframes quoteGlow {
+    0%, 100% { filter: drop-shadow(0 0 15px rgba(139,92,246,0.3)); }
+    50% { filter: drop-shadow(0 0 40px rgba(0,240,255,0.5)); }
+}
+
+/* ===========================
+   VOLUME BAR
+   =========================== */
+#volume-bar {
+    position: absolute;
+    bottom: 60px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: none;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+}
+
+.vol-segment {
+    width: 3px;
+    background: linear-gradient(to top, #8b5cf6, #00f0ff);
+    border-radius: 2px;
+    transition: height 0.05s ease;
+    min-height: 2px;
+}
+
+/* ===========================
+   CONTROLS HINT
+   =========================== */
+#controls-hint {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: none;
+    gap: 20px;
+    font-size: 0.55rem;
+    color: rgba(255,255,255,0.12);
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ===========================
+   SCENE TOGGLE BUTTON
+   =========================== */
+#scene-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 25;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(139,92,246,0.3);
+    color: rgba(255,255,255,0.7);
+    padding: 10px 20px;
+    font-size: 0.75rem;
+    font-family: 'Tajawal', sans-serif;
+    letter-spacing: 1px;
+    border-radius: 30px;
+    cursor: pointer;
+    backdrop-filter: blur(15px);
+    transition: all 0.3s ease;
+}
+
+#scene-toggle:hover {
+    background: rgba(139,92,246,0.2);
+    border-color: rgba(139,92,246,0.6);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(139,92,246,0.3);
+    transform: scale(1.05);
+}

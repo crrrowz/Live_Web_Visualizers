@@ -1,0 +1,15 @@
+{
+  "totalSessions": 1,
+  "totalMinutes": 793,
+  "currentStreak": 1,
+  "lastStudyDate": "2026-05-10",
+  "longestSessionMin": 793,
+  "level": 1,
+  "xp": 7930,
+  "sessions": [
+    {
+      "date": "2026-05-10T13:38:33.623Z",
+      "durationMin": 793
+    }
+  ]
+}
